@@ -14,6 +14,8 @@ library(dplyr)
 library(cluster)
 library(sf)
 library(ggfortify)
+install.packages("zipcode")
+library(zipcode)
 #-----------------Get the US county map data and then extract the Virginia counties-----------
 counties<-map_data("county")
 va_county<-counties%>%filter(region=="virginia")
@@ -33,14 +35,11 @@ arrests$LastName<-NULL
 arrests$MiddleName<-NULL
 arrests$NameSuffix<-NULL
 arrests<-separate(arrests, time, into=c("hour", "minute", "second"), sep=":")
-arrests
-arrests <- read.csv("~/Desktop/arrests-blue.csv")
-#-------------- get coordinates
-geocoded<-data.frame(arrests)
-for(i in 1:nrow(arrests)){
-  result<-geocode(arrests$ADDRESS[i], output="latlona", source="google")
-  arrests$longitude[i]<-as.numeric(result[1])
-  arrests$latitude[i]<-as.numeric(result[2])
-  arrests$ADDRESS[i]<-as.character(result[3])
-}
 
+arrests <- read.csv("~/Desktop/arrests-blue.csv")
+arrests$address=arrests$ADDRESS
+arrests$city= "Charlottesville"
+arrests$state= "VA"
+arrests$zipcode= "22903"
+arrests<-arrests%>%unite("FullAddress", city:zipcode, sep=", ")
+arrests<-arrests %>% unite("CompleteAddress", address:FullAddress, sep=", ")
