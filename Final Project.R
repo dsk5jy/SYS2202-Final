@@ -42,3 +42,6 @@ cville_map <- get_map(getbb("Charlottesville"), maptype="toner-background")
 crimemap<-ggmap(cville_map)+geom_point(data=arrests2, aes(x=arrests2$longitude, y=arrests2$latitude),color="blue")
 crimemap
 write.csv(arrests2, "Desktop/ArrestData_Cville_2019_WithCoordinates")
+
+
+### Everything above written by Darren
