@@ -27,6 +27,10 @@ arrests2 <- read_excel("Downloads/ArrestData_Cville_2019-pres_CLEAN (1).xlsx")
 arrests2$fulladdress<-arrests2$FULL_ADDRESS
 arrests2$FULL_ADDRESS<-NULL
 arrests2$NameSuffix<-NULL
+arrests2<-separate(arrests2, TIME, into=c("Date", "Time"), sep= " ")
+arrests2$Date<-NULL
+arrests2<-separate(arrests2, Time, into=c("hour", "minute", "second"), sep=":")
+arrests2$MINUTE<-NULL
 #--- get geo coordinates from address---------
 geocoded2<-data.frame(arrests2)
 register_google(key="AIzaSyBtSvnbnZzZdQ3K93rjCkW56mY6iXKC0XA")
@@ -41,7 +45,9 @@ arrests2<-na.omit(arrests2)
 cville_map <- get_map(getbb("Charlottesville"), maptype="toner-background")
 crimemap<-ggmap(cville_map)+geom_point(data=arrests2, aes(x=arrests2$longitude, y=arrests2$latitude),color="blue")
 crimemap
-write.csv(arrests2, "Desktop/ArrestData_Cville_2019_WithCoordinates")
-
+#--- write to excel to fuck w some stuff
+write.csv(arrests2, "Desktop/ArrestData_Cville_2019_WithCoordinates.csv")
+# Read it back in--
+arrests2<- read.csv("~/Desktop/ArrestData_Cville_2019_WithCoordinates.csv")
 
 ### Everything above written by Darren
