@@ -118,3 +118,46 @@ server <- function(input,output,session){
 shinyApp(ui,server)
 
 #Code above by hunter diminick
+
+
+#------- HEAT MAP TRIAL CODE ---------# by Emma don't even worry abt it yet it's still in progress
+# Nomalizing the data for the heat map representation
+heatmap_df <- NULL
+heatmap_df = data.frame(arrestData$OFFENSE, arrestData$VIOLENCE, arrestData$NumOffenses, arrestData$TIME_OF_DAY)
+x <- split(heatmap_df, heatmap_df$arrestData.OFFENSE)
+
+normalize_violence <- function(x) {
+  return ((x - (1)) / ((5) - (0)))
+}
+normalize_numOf <- function(x) {
+  return ((x - (1)) / ((max(arrestData$NumOffenses)) - (1)))
+}
+
+  #getting the numerical data from the split dataset
+library(readxl)
+UnstackedArrestData <- read_excel("C:/Users/student/OneDrive/Documents/sys 2202/UnstackedArrestData.xlsx")
+df <- UnstackedArrestData
+heatmap_data <- data.frame(UnstackedArrestData$Violence_ASSAULT,UnstackedArrestData$NumOffenses_ASSAULT,
+                           UnstackedArrestData$Violence_ALCOHOL,UnstackedArrestData$NumOffenses_ALCOHOL,
+                           UnstackedArrestData$Violence_DAMAGE, UnstackedArrestData$NumOffenses_DAMAGE,
+                           UnstackedArrestData$Violence_VIOLATION,UnstackedArrestData$NumOffenses_VIOLATION)
+assault_violence_norm <- normalize_violence(UnstackedArrestData$Violence_ASSAULT)
+assault_offenses_norm <- normalize_numOf(UnstackedArrestData$NumOffenses_ASSAULT)
+alcohol_violence_norm <- normalize_violence(UnstackedArrestData$Violence_ALCOHOL)
+alcohol_offenses_norm <- normalize_numOf(UnstackedArrestData$NumOffenses_ALCOHOL)
+damage_violence_norm <- normalize_violence(UnstackedArrestData$Violence_DAMAGE)
+damage_offenses_norm <- normalize_numOf(UnstackedArrestData$NumOffenses_DAMAGE)
+violation_violence_norm <- normalize_violence(UnstackedArrestData$Violence_VIOLATION)
+violation_offenses_norm <- normalize_numOf(UnstackedArrestData$NumOffenses_VIOLATION)
+heatmap_data_norm <- data.frame(assault_violence_norm, alcohol_violence_norm,damage_violence_norm,violation_violence_norm,
+                                assault_offenses_norm,alcohol_offenses_norm,damage_offenses_norm,violation_offenses_norm)
+heatmap_data_norm <- na.omit(heatmap_data_norm)
+heatmap_data <- na.omit(heatmap_data)
+
+
+# Making the heatmap interactive
+    #install.packages("pheatmap")
+library("pheatmap")
+pheatmap(as.matrix(heatmap_data_norm), colors = "RdBu")
+
+#---------- Above code writen by Emma but will be revised
