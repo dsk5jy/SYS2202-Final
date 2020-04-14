@@ -160,4 +160,4 @@ heatmap_data <- na.omit(heatmap_data)
 library("pheatmap")
 pheatmap(as.matrix(heatmap_data_norm), colors = "RdBu")
 
-#---------- Above code writen by Emma but will be revised
+# above code by Emma Graham
