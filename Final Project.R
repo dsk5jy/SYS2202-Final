@@ -51,3 +51,62 @@ write.csv(arrests2, "Desktop/ArrestData_Cville_2019_WithCoordinates.csv")
 arrests2<- read.csv("~/Desktop/ArrestData_Cville_2019_WithCoordinates.csv")
 
 ### Everything above written by Darren
+
+arrests2$violencelev <- ifelse(arrests2$VIOLENCE <=2, "mild",
+                               ifelse(arrests2$VIOLENCE >2 | arrests2$VIOLENCE <5,"medium",
+                                      ifelse(arrests2$VIOLENCE >= 5, "Bad")))
+ui <- fluidPage(
+  mainPanel(
+    leafletOutput(outputId = "mymap"),
+    absolutePanel(top = 60, left = 20,
+                  checkboxInput("markers","VIOLENCE",FALSE),
+                  
+                )
+  )
+)
+
+server <- function(input,output,session){
+  pal<- colorNumeric(
+    palette = c('green','yellow','red'),
+                domain = arrests2$VIOLENCE)
+  
+  output$mymap <- renderLeaflet({
+    leaflet(arrests2) %>%
+      setView(lng = -78.49,lat = 38.03, zoom = 2) %>%
+      addTiles() %>%
+      addCircles(data = arrests2, lat = ~ latitude, lng = ~ longitude,
+                 weight = 1, radius = ~sqrt(VIOLENCE)*25000, popup = ~as.character(violencelev),
+                 label = ~as.character(paste0("Violence: ",sep = " ", violencelev)), color = ~ pal(violencelev),fillOpacity = 0.5)
+  })
+  
+  observe({
+    proxy<- leafletProxy("mymap",data = arrests2)
+    proxy %>% clearMarkers()
+    if(input$markers){
+      proxy %>% addCircleMarkers(stroke = FALSE, color = ~ pal(violencelev, fillOpacity = 0.2,
+                    label = ~as.character(paste0("Violence: ", sep = " ", violencelev)))%>%
+                      addLegend("bottomright", pal = pal, values = arrests2$VIOLENCE,
+                                title = "Violence",
+                                opacity = 1))}
+    else{
+      proxy %>% clearMarkers() %>% clearControls()
+    }
+  })
+  
+  observe({
+    proxy<- leafletProxy("mymap", data = arrests2)
+    proxy %>% clearMarkers()
+    if(input$heat){
+      proxy %>% addHeatmap(lng = ~longitude, lat = ~latitude, 
+        intensity = ~VIOLENCE, blur = 10, max = 0.05, radius = 15)
+    }
+    else{
+      proxy %>% clearHeatmap()
+    }
+  })
+  
+}
+
+shinyApp(ui,server)
+
+#Code above by hunter diminick
