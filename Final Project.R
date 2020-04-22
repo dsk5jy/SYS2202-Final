@@ -121,11 +121,12 @@ shinyApp(ui,server)
 
 
 #------- HEAT MAP TRIAL CODE ---------# by Emma don't even worry abt it yet it's still in progress
-# Nomalizing the data for the heat map representation
-heatmap_df <- NULL
-heatmap_df = data.frame(arrestData$OFFENSE, arrestData$VIOLENCE, arrestData$NumOffenses, arrestData$TIME_OF_DAY)
-x <- split(heatmap_df, heatmap_df$arrestData.OFFENSE)
+# HEATMAPPING
+heatmap_time <- NULL
+heatmap_time = data.frame(arrestData$TIME_OF_DAY, arrestData$VIOLENCE, arrestData$NumOffenses)
 
+
+# Nomalizing the data for the heat map representation
 normalize_violence <- function(x) {
   return ((x - (1)) / ((5) - (0)))
 }
@@ -133,7 +134,7 @@ normalize_numOf <- function(x) {
   return ((x - (1)) / ((max(arrestData$NumOffenses)) - (1)))
 }
 
-  #getting the numerical data from the split dataset
+#getting the numerical data from the split dataset
 library(readxl)
 UnstackedArrestData <- read_excel("C:/Users/student/OneDrive/Documents/sys 2202/UnstackedArrestData.xlsx")
 df <- UnstackedArrestData
@@ -152,12 +153,38 @@ violation_offenses_norm <- normalize_numOf(UnstackedArrestData$NumOffenses_VIOLA
 heatmap_data_norm <- data.frame(assault_violence_norm, alcohol_violence_norm,damage_violence_norm,violation_violence_norm,
                                 assault_offenses_norm,alcohol_offenses_norm,damage_offenses_norm,violation_offenses_norm)
 heatmap_data_norm <- na.omit(heatmap_data_norm)
-heatmap_data <- na.omit(heatmap_data)
 
 
-# Making the heatmap interactive
-    #install.packages("pheatmap")
+# Making 4 heatmaps by time intervals and violence level with respect to the number of offenses
+#install.packages("pheatmap")
 library("pheatmap")
 pheatmap(as.matrix(heatmap_data_norm), colors = "RdBu")
+
+  #install.packages("tidyr")
+library("tidyr")
+library("ggplot2")
+arrestData$sqrt.num <- sqrt(arrestData$NumOffenses)
+
+# By Time of Day
+time.heatmap <- ggplot(data = arrestData, mapping = aes(x = arrestData$TIME_OF_DAY, y = arrestData$VIOLENCE, 
+                                                          fill= arrestData$sqrt.num)) + geom_tile() +
+  xlab(label = "Time of Day") + ylab(label = "Violence Level [0-5]") +
+  scale_fill_gradient(name = "sqrt(# Offenses)", low = "#FFFFFF", high = "#012345")
+time.heatmap
+
+# By Day of the Week
+day.heatmap <- ggplot(data = arrestData, mapping = aes(x = arrestData$DayofWeek, y = arrestData$VIOLENCE, 
+                                                         fill= arrestData$sqrt.num)) + geom_tile() +
+  xlab(label = "Day of Week") + ylab(label = "Violence Level [0-5]") +
+  scale_fill_gradient(name = "sqrt(# Offenses)", low = "#FFFFFF", high = "#012345")
+day.heatmap
+
+#By Month of the Year
+month.heatmap <- ggplot(data = arrestData, mapping = aes(x = reorder(arrestData$Month, violenceLevel), y = arrestData$VIOLENCE, 
+                                                         fill= arrestData$sqrt.num)) + geom_tile() +
+  xlab(label = "Month") + ylab(label = "Violence Level [0-5]") +
+  scale_fill_gradient(name = "sqrt(# Offenses)", low = "#FFFFFF", high = "#012345")
+month.heatmap
+
 
 # above code by Emma Graham
