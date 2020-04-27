@@ -1,0 +1,98 @@
+
+
+library(osmar)
+library(prettymapr)
+library(osmdata)
+library(DBI)
+library(RMySQL)
+library(tidyverse)
+library(anytime)
+library(ggplot2)
+library(ggmap)
+library(maptools)
+library(maps)
+library(zoo)
+library(dplyr)
+library(cluster)
+library(sf)
+library(ggfortify)
+library(shiny)
+library(leaflet)
+library(cluster)
+library(smoother)
+library(factoextra)
+
+# ------------------------------------------------------------
+
+cData <- ArrestData_Cville_2019_WithCoordinates
+cData$hour <- as.numeric(cData$hour)
+cData$ArrestDate <- as.Date(cData$ArrestDate)
+
+latlong <- data.frame(longitude = cData$longitude, latitude = cData$latitude)
+latlong <- filter(latlong, latlong$longitude <= -78.45 & latlong$longitude >= -78.525 & latlong$latitude <= 38.1 & latlong$latitude >= 38)
+
+ggplot(cData) + geom_point(aes(x = longitude, y = latitude, color = VIOLENCE)) + xlim(-78.525, -78.45) + ylim(38, 38.1) + ggtitle("Initital Location Plot")
+
+kman <- kmeans(latlong, centers = 4, nstart = 25)
+map4 <- fviz_cluster(kman, data = latlong)
+
+map <- ggplot(cData) + geom_point(aes(x = longitude, y = latitude))
+
+cData$ArrestDate <- as.Date(cData$ArrestDate, format = "MM/DD/YY")
+
+# -------------------------------------------
+  
+ui <- fluidPage(
+  titlePanel("Charlottesville Crime Map"),
+  verticalLayout(sidebarPanel("OPTIONS", 
+                              fluidRow(
+     column(3, sliderInput("slider", "Time of Day", min = 0, max = 23, value = cData$hour)),
+      column(3, checkboxGroupInput("gender", "Gender", c("Male", "Female"), select = "Male")),
+      column(3, sliderInput("repeet", "Repeat Offenses", min= 1, max = 20, value = cData$NumOffenses)),
+      column(3, checkboxGroupInput("violence", "Violence Level", c("1", "2", "3", "4", "5"))),
+     column(3, checkboxGroupInput("race", "RACE", c("White", "Black", "Asian or Pacific Islander", "Not White"), selected= "White")),
+     column(3, dateRangeInput("date", "DATE", start= "2019-01-01", end= "2020-04-27", format= "yyyy-mm-dd"))),
+     width = 12),
+  
+  mainPanel("Crime Map", leafletOutput("mymap"))
+ )
+)
+  
+server <- function(input, output, session){
+  
+  
+  output$mymap <- renderLeaflet({
+    leaflet() %>% 
+      addTiles() %>%
+      addMarkers(lng = cData$longitude, lat= cData$latitude)
+  })
+  
+  dateFiltered <- reactive({ cData %>%
+    filter(cData$ArrestDate %in% seq(input$date[1], input$date[2], by = "day"))
+  })
+
+
+  observe({
+    
+
+    hour <- input$hour
+    offenses <- input$repeet
+    gender <- input$gender
+    date <- dateFiltered()
+    violence <- input$violence
+    race <- input$race
+    
+    newPoints <- dateFiltered() %>%
+      filter(dateFiltered()$hour %in% hour & dateFiltered()$NumOffenses %in% offenses & dateFiltered()$Sex %in% gender & dateFiltered()$VIOLENCE %in% violence & dateFiltered()$Race %in% race)
+    leafletProxy("mymap") %>% clearMarkers() %>%
+      addMarkers(lng = newPoints$longitude, lat= newPoints$latitude, popup = paste("ArrestID", newPoints$ArrestID, "<br>",
+                                                                                   "ArrestDate:", newPoints$ArrestDate, "<br>",
+                                                                                   "Gender:", newPoints$Sex, "<br>",
+                                                                                   "Race:", newPoints$Race, "<br>",
+                                                                                   "Crime Type:", newPoints$OFFENSE))
+  })
+
+}
+
+shinyApp(ui, server)
+
